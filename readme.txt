@@ -1,9 +1,9 @@
 === Absolute <> Relative URLs ===
-Contributors: Andrew Patterson, Patterson Research Inc.
+Contributors: intuitart
 Tags: absolute, relative, url, seo, portable, website
 Requires at least: 4.4.0
-Tested up to: 4.4.2
-Stable tag: 1.4.1
+Tested up to: 4.6.1
+Stable tag: 1.4.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,3 +67,9 @@ Should you stop using the plugin your website will still work as the plugin uses
 
 * Updated readme.txt to include wordpress.org installation and format correctly in validator
 * Renamed plugin file and folder to match plugin name submitted to Wordpress
+
+= 1.4.2 =
+
+* Tested up to WP 4.6.1
+* Updated readme.txt
+* Added icon to display on plugins page

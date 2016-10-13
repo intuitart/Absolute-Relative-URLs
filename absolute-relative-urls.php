@@ -7,8 +7,8 @@ Description: Saves relative URLs to database. Displays absolute URLs.
 Author: Andrew Patterson
 Author URI: http://www.pattersonresearch.ca
 Tags: relative, absolute, url, seo, portable
-Version: 1.4.1
-Date: 11 Mar 2016
+Version: 1.4.2
+Date: 13 Oct 2016
 */
 
 // Exit if accessed directly
