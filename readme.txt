@@ -1,9 +1,10 @@
 === Absolute <> Relative URLs ===
-Contributors: Andrew Patterson, Patterson Research Inc.
+Contributors: intuitart
 Tags: absolute, relative, url, seo, portable, website
 Requires at least: 4.4.0
-Tested up to: 4.4.2
-Stable tag: 1.4.1
+Tested up to: 4.7
+Stable tag: 1.5.0
+Version: 1.5.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,9 +26,15 @@ Alternatively you can download the plugin from www.oxfordframework.com/absolute-
 
 That's it! Check your database after you've saved some content. URLs should be root relative. Check your editor. URLs should be absolute. Check the source on your web page. URLs should be absolute.
 
-At this time, the plugin does not retroactively modify urls in your database unless you manually update content.
+The plugin does not retroactively modify urls in your database unless you manually update content.
 
 Should you stop using the plugin your website will still work as the plugin uses root relative urls and browsers assume the same domain when they see a relative url. Exceptions would be when a you are running in a subdirectory and that is part of your site url, or if you are providing an RSS feed to third parties where absolute urls are required.
+
+* New in version 1.5.0
+
+Manage filters that get processed by modifying the array of filters. In functions.php, put "add_filter( 'of_absolute_relative_urls_{type}_filters', 'your_function' );" where {type} is 'view', 'save', or 'option'. Build your_function to add or remove array elements identifying filters.
+
+Enable all options instead of specific options. In functions.php, put "add_filter( 'of_absolute_relative_urls_enable_all', function( $enable_all ) { return true; } );".
 
 == Changelog ==
 
@@ -67,3 +74,18 @@ Should you stop using the plugin your website will still work as the plugin uses
 
 * Updated readme.txt to include wordpress.org installation and format correctly in validator
 * Renamed plugin file and folder to match plugin name submitted to Wordpress
+
+= 1.4.2 =
+
+* Tested up to WP 4.6.1
+* Updated readme.txt
+* Added icon to display on plugins page
+
+= 1.5.0 =
+
+* Tested up to WP 4.7
+* Wrapped code in a class.
+* Added a couple more editor option hooks to catch more urls.
+* Included img 'srcset' attribute when viewing content.
+* Added filters to allow additional view/save hooks or options to be added.
+* Added ability to filter all options, with exclusions, instead of filtering specific options. This is not enabled by default. Excluded are the built in Wordpress options.
