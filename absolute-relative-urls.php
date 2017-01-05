@@ -1,7 +1,7 @@
 <?php
 
 /*
-Plugin Name: Absolute &lt;&gt; Relative URLs NEW
+Plugin Name: Absolute &lt;&gt; Relative URLs
 Plugin URI: https://www.oxfordframework.com/absolute-relative-urls
 Description: Saves relative URLs to database. Displays absolute URLs.
 Author: Andrew Patterson
