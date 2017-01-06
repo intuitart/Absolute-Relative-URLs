@@ -7,8 +7,8 @@ Description: Saves relative URLs to database. Displays absolute URLs.
 Author: Andrew Patterson
 Author URI: http://www.pattersonresearch.ca
 Tags: relative, absolute, url, seo, portable
-Version: 1.5.0
-Date: 5 Jan 2017
+Version: 1.5.1
+Date: 6 Jan 2017
 */
 
 // Exit if accessed directly
@@ -33,6 +33,55 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 			self::set_option_filters();
 		} // init
 		
+		// Remove domain from urls when saving content
+		public static function relative_url( $content ) {
+			if ( is_array( $content ) ) {
+				foreach ( $content as $key => $value ) {
+					$content[ $key ] = self::relative_url( $value );
+				}
+			} elseif ( is_object( $content ) ) {
+				foreach ( $content as $key => $value ) {
+					$content->$key = self::relative_url( $value );
+				}
+			} elseif ( is_string( $content ) ) {
+				if ( self::$wpurl === self::$url ) { // doesn't matter which url gets used
+					$content = str_replace( self::$url, '/', $content );
+				} elseif ( 0 === strpos( self::$wpurl, self::$url ) ) { // replace wp url first
+					$content = str_replace( self::$wpurl, '/', $content );
+					$content = str_replace( self::$url, '/', $content );
+				} else { // replace site url first
+					$content = str_replace( self::$url, '/', $content );
+					$content = str_replace( self::$wpurl, '/', $content );
+				}
+			}
+			return $content;
+		} // relative_url
+
+		// Add domain to urls when displaying/editing content
+		public static function absolute_url( $content ) {
+			if ( is_array( $content ) ) {
+				foreach ( $content as $key => $value ) {
+					$content[ $key ] = self::absolute_url( $value );
+				}
+			} elseif ( is_object( $content ) ) {
+				foreach ( $content as $key => $value ) {
+					$content->$key = self::absolute_url( $value );
+				}
+			} elseif ( is_string( $content ) ) {
+				$delim = chr(127);
+				// content is a url field, not prefixed with 'src' or 'href'
+				if ( 0 === strpos( $content, '/' . self::$upload_path ) ) {
+					$content = self::$wpurl . substr( $content, 1 );
+				} else { // regular content
+					// do wpurl first, look for 'src', 'href', 'srcset' and ', ' followed by upload path
+					$content = preg_replace( $delim . '(src="|href="|srcset="|, )/' . self::$upload_path . $delim, '${1}' . self::$wpurl . self::$upload_path, $content );
+					// now do url, just 'href' not followed by upload path
+					$content = str_replace( 'href="/', 'href="' . self::$url, $content );
+				}
+			}
+			return $content;
+		} // absolute_url
+
 		// set vars: upload_path, wpurl and url
 		private static function set_vars() {
 			self::$wpurl = trailingslashit( get_bloginfo( 'wpurl' ) );
@@ -73,9 +122,13 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 		// Options filters (Both directions)
 		private static function set_option_filters() {
 			$enable_all = apply_filters( 'of_absolute_relative_urls_enable_all', false );
-
-			// Add specific option filters if the 'all' filter is not enabled
-			if ( ! $enable_all ) {
+			
+			if ( $enable_all ) {
+				// Exclude specific option filters if the 'all' filter is enabled
+				self::set_option_exclusions();
+				add_action( 'all', array( __CLASS__, 'filter_all_options' ) );
+			} else {
+				// Add specific option filters if the 'all' filter is not enabled
 				$option_filters = array( // defaults
 					'theme_mods_' . get_option('template'),
 					'theme_mods_' . get_option('stylesheet'),
@@ -88,11 +141,15 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 					add_filter( 'pre_update_option_' . $filter, array( __CLASS__, 'relative_url' ) );
 					add_filter( 'option_' . $filter, array( __CLASS__, 'absolute_url' ) );
 				}
-				return;
 			}
-			
+		} // set_option_filters
+
+		// Set options to exclude from 'all' options
+		private static function set_option_exclusions() {
 			// identify options to exclude from 'all'
-			self::$exclude_options = array(
+			$exclude_options = array();
+			$exclude_options = apply_filters( 'of_absolute_relative_urls_exclude_option_filters', $exclude_options );
+			self::$exclude_options = array_merge( $exclude_options, array(
 				'siteurl',
 				'home',
 				'blogname',
@@ -213,9 +270,8 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 				// 4.4.0
 				'medium_large_size_w',
 				'medium_large_size_h',
-			);
-			add_action( 'all', array( __CLASS__, 'filter_all_options' ) );
-		} // set_option_filters
+			));
+		} // set_option_exclusions
 
 		// dynamically add option filters
 		public static function filter_all_options( $filter ) {
@@ -239,55 +295,6 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 			}
 		} // filter_all_options
 
-		// Remove domain from urls when saving content
-		public static function relative_url( $content ) {
-			if ( is_array( $content ) ) {
-				foreach ( $content as $key => $value ) {
-					$content[ $key ] = self::relative_url( $value );
-				}
-			} elseif ( is_object( $content ) ) {
-				foreach ( $content as $key => $value ) {
-					$content->$key = self::relative_url( $value );
-				}
-			} elseif ( is_string( $content ) ) {
-				if ( self::$wpurl === self::$url ) { // doesn't matter which url gets used
-					$content = str_replace( self::$url, '/', $content );
-				} elseif ( 0 === strpos( self::$wpurl, self::$url ) ) { // replace wp url first
-					$content = str_replace( self::$wpurl, '/', $content );
-					$content = str_replace( self::$url, '/', $content );
-				} else { // replace site url first
-					$content = str_replace( self::$url, '/', $content );
-					$content = str_replace( self::$wpurl, '/', $content );
-				}
-			}
-			return $content;
-		} // relative_url
-
-		// Add domain to urls when displaying/editing content
-		public static function absolute_url( $content ) {
-			if ( is_array( $content ) ) {
-				foreach ( $content as $key => $value ) {
-					$content[ $key ] = self::absolute_url( $value );
-				}
-			} elseif ( is_object( $content ) ) {
-				foreach ( $content as $key => $value ) {
-					$content->$key = self::absolute_url( $value );
-				}
-			} elseif ( is_string( $content ) ) {
-				$delim = chr(127);
-				// content is a url field, not prefixed with 'src' or 'href'
-				if ( 0 === strpos( $content, '/' . self::$upload_path ) ) {
-					$content = self::$wpurl . substr( $content, 1 );
-				} else { // regular content
-					// do wpurl first, look for 'src', 'href', 'srcset' and ', ' followed by upload path
-					$content = preg_replace( $delim . '(src="|href="|srcset="|, )/' . self::$upload_path . $delim, '${1}' . self::$wpurl . self::$upload_path, $content );
-					// now do url, just 'href' not followed by upload path
-					$content = str_replace( 'href="/', 'href="' . self::$url, $content );
-				}
-			}
-			return $content;
-		} // absolute_url
-
-	}
-	of_absolute_relative_urls::init();
+	} // class of_absolute_relative_urls
+	add_action( 'init', array( 'of_absolute_relative_urls', 'init' ) );
 }

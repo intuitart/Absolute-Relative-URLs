@@ -3,8 +3,8 @@ Contributors: intuitart
 Tags: absolute, relative, url, seo, portable, website
 Requires at least: 4.4.0
 Tested up to: 4.7
-Stable tag: 1.5.0
-Version: 1.5.0
+Stable tag: 1.5.1
+Version: 1.5.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,21 +30,57 @@ The plugin does not retroactively modify urls in your database unless you manual
 
 Should you stop using the plugin your website will still work as the plugin uses root relative urls and browsers assume the same domain when they see a relative url. Exceptions would be when a you are running in a subdirectory and that is part of your site url, or if you are providing an RSS feed to third parties where absolute urls are required.
 
-* New in version 1.5.0
+* New in version 1.5.0, 1.5.1
 
-Manage filters that get processed by modifying the array of filters. In functions.php, put "add_filter( 'of_absolute_relative_urls_{type}_filters', 'your_function' );" where {type} is 'view', 'save', or 'option'. Build your_function to add or remove array elements identifying filters.
+Enable all options instead of specific options. In functions.php, put
+    add_filter( 'of_absolute_relative_urls_enable_all', function() { return true; } );
 
-Enable all options instead of specific options. In functions.php, put "add_filter( 'of_absolute_relative_urls_enable_all', function( $enable_all ) { return true; } );".
+Manage filters that get processed by modifying the array of filters. Build a function to add or remove filter names in the array. Then in functions.php, put
+    add_filter( 'of_absolute_relative_urls_{type}_filters', 'your_function' );
+where {type} is 'view', 'save', 'option' or 'exclude_option'.
+
 
 == Changelog ==
 
-= 1.0 =
+= 1.5.1 =
 
-* First release, catches post_content and widget_black-studio-tinymce updates
+* Enable 'all' options filter wasn't working. Fixed.
+* Added filter to allow additional option exclusions when 'all' options are enabled.
+* Updated readme.txt.
 
-= 1.1 =
+= 1.5.0 =
 
-* Added updates to the excerpt field when it is entered separately from the content
+* Tested up to WP 4.7
+* Wrapped code in a class.
+* Added a couple more editor option hooks to catch more urls.
+* Included img 'srcset' attribute when viewing content.
+* Added filters to allow additional view/save hooks or options to be added.
+* Added ability to filter all options, with exclusions, instead of filtering specific options. This is not enabled by default. Excluded are the built in Wordpress options.
+
+= 1.4.2 =
+
+* Tested up to WP 4.6.1
+* Updated readme.txt
+* Added icon to display on plugins page
+
+= 1.4.1 =
+
+* Updated readme.txt to include wordpress.org installation and format correctly in validator
+* Renamed plugin file and folder to match plugin name submitted to Wordpress
+
+= 1.4 =
+
+* Added function to more reliably determine site's base upload path (typically 'wp-content/uploads')
+* Distinguished between wordpress and site urls so that wordpress can run separate from domain root
+* Tested and confirmed the following scenarios work, all from the same database:
+ * Wordpress and site urls are the same and running from root (http or https)
+ * Wordpress and site urls are the same and running from a subdirectory (e.g ~/wordpress)
+ * Wordpress url is subdirectory and site url is root directory
+
+= 1.3 =
+
+* Cleaned up to meet wordpress.org coding standards
+* Tweaked the code to use trailingslashit($string) rather than hard code $string . ‘/’
 
 = 1.2 =
 
@@ -56,36 +92,10 @@ Enable all options instead of specific options. In functions.php, put "add_filte
 * Put view, save and options filters in arrays to document and make it easier to add/remove filters
 * Updated description and installation
 
-= 1.3 =
+= 1.1 =
 
-* Cleaned up to meet wordpress.org coding standards
-* Tweaked the code to use trailingslashit($string) rather than hard code $string . ‘/’
+* Added updates to the excerpt field when it is entered separately from the content
 
-= 1.4 =
+= 1.0 =
 
-* Added function to more reliably determine site's base upload path (typically 'wp-content/uploads')
-* Distinguished between wordpress and site urls so that wordpress can run separate from domain root
-* Tested and confirmed the following scenarios work, all from the same database:
- * Wordpress and site urls are the same and running from root (http or https)
- * Wordpress and site urls are the same and running from a subdirectory (e.g ~/wordpress)
- * Wordpress url is subdirectory and site url is root directory
-
-= 1.4.1 =
-
-* Updated readme.txt to include wordpress.org installation and format correctly in validator
-* Renamed plugin file and folder to match plugin name submitted to Wordpress
-
-= 1.4.2 =
-
-* Tested up to WP 4.6.1
-* Updated readme.txt
-* Added icon to display on plugins page
-
-= 1.5.0 =
-
-* Tested up to WP 4.7
-* Wrapped code in a class.
-* Added a couple more editor option hooks to catch more urls.
-* Included img 'srcset' attribute when viewing content.
-* Added filters to allow additional view/save hooks or options to be added.
-* Added ability to filter all options, with exclusions, instead of filtering specific options. This is not enabled by default. Excluded are the built in Wordpress options.
+* First release, catches post_content and widget_black-studio-tinymce updates
