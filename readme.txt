@@ -3,8 +3,8 @@ Contributors: intuitart
 Tags: absolute, relative, url, seo, portable, website
 Requires at least: 4.4.0
 Tested up to: 4.7
-Stable tag: 1.5.1
-Version: 1.5.1
+Stable tag: 1.5.2
+Version: 1.5.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -41,6 +41,12 @@ where {type} is 'view', 'save', 'option' or 'exclude_option'.
 
 
 == Changelog ==
+
+= 1.5.2 =
+
+* Tweaked algorithm that generates absolute urls to better catch edge cases.
+* Move WP options, for exclusion from 'all' options, into separate file.
+* Moved derivation of 1st and 2nd urls required when creating absolute urls so it only runs once, on class init().
 
 = 1.5.1 =
 

@@ -7,8 +7,8 @@ Description: Saves relative URLs to database. Displays absolute URLs.
 Author: Andrew Patterson
 Author URI: http://www.pattersonresearch.ca
 Tags: relative, absolute, url, seo, portable
-Version: 1.5.1
-Date: 6 Jan 2017
+Version: 1.5.2
+Date: 12 Jan 2017
 */
 
 // Exit if accessed directly
@@ -21,10 +21,13 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 
 	class of_absolute_relative_urls {
 
-		private static $upload_path;
-		private static $wpurl;
-		private static $url;
-		private static $exclude_options = array();
+		private static $upload_path; // path only
+		private static $wpurl; // wp url (upload url)
+		private static $url; // site url
+		private static $url1; // first url when making relative urls
+		private static $url2; // second url when making relative urls
+		private static $delim; // delimiter for preg_replace
+		private static $exclude_options = array(); // exclusions when doing 'all' options
 		
 		// initialize
 		public static function init() {
@@ -44,14 +47,9 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 					$content->$key = self::relative_url( $value );
 				}
 			} elseif ( is_string( $content ) ) {
-				if ( self::$wpurl === self::$url ) { // doesn't matter which url gets used
-					$content = str_replace( self::$url, '/', $content );
-				} elseif ( 0 === strpos( self::$wpurl, self::$url ) ) { // replace wp url first
-					$content = str_replace( self::$wpurl, '/', $content );
-					$content = str_replace( self::$url, '/', $content );
-				} else { // replace site url first
-					$content = str_replace( self::$url, '/', $content );
-					$content = str_replace( self::$wpurl, '/', $content );
+				$content = str_replace( self::$url1, '/', $content );
+				if ( self::$url2 ) {
+					$content = str_replace( self::$url2, '/', $content );
 				}
 			}
 			return $content;
@@ -67,25 +65,29 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 				foreach ( $content as $key => $value ) {
 					$content->$key = self::absolute_url( $value );
 				}
-			} elseif ( is_string( $content ) ) {
-				$delim = chr(127);
-				// content is a url field, not prefixed with 'src' or 'href'
-				if ( 0 === strpos( $content, '/' . self::$upload_path ) ) {
-					$content = self::$wpurl . substr( $content, 1 );
-				} else { // regular content
-					// do wpurl first, look for 'src', 'href', 'srcset' and ', ' followed by upload path
-					$content = preg_replace( $delim . '(src="|href="|srcset="|, )/' . self::$upload_path . $delim, '${1}' . self::$wpurl . self::$upload_path, $content );
-					// now do url, just 'href' not followed by upload path
-					$content = str_replace( 'href="/', 'href="' . self::$url, $content );
-				}
+			} elseif ( is_string( $content ) ) { // wp url, then site url
+				$content = preg_replace( self::$delim . '(^|src="|href="|srcset="|, )/' . self::$upload_path . self::$delim, '${1}' . self::$wpurl . self::$upload_path, $content );
+				$content = preg_replace( self::$delim . '(^|src="|href=")/' . self::$delim, '${1}' . self::$url, $content );
 			}
 			return $content;
 		} // absolute_url
 
-		// set vars: upload_path, wpurl and url
+		// set vars
 		private static function set_vars() {
+			self::$delim = chr(127);
 			self::$wpurl = trailingslashit( get_bloginfo( 'wpurl' ) );
 			self::$url = trailingslashit( get_bloginfo( 'url' ) );
+			if ( self::$wpurl === self::$url ) { // doesn't matter which url gets used
+				self::$url1 = self::$wpurl;
+				self::$url2 = false;
+			} elseif ( 0 === strpos( self::$wpurl, self::$url ) ) { // wp url first
+				self::$url1 = self::$wpurl;
+				self::$url2 = self::$url;
+			} else { // site url first
+				self::$url1 = self::$url;
+				self::$url2 = self::$wpurl;
+			}
+			// upload path
 			$wp_upload = wp_upload_dir();
 			if ( ! $wp_upload[ 'error' ] && ( 0 === strpos( $wp_upload[ 'baseurl' ], self::$wpurl ) ) ) {
 				self::$upload_path = substr( $wp_upload[ 'baseurl' ], strlen( self::$wpurl ) );
@@ -125,7 +127,10 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 			
 			if ( $enable_all ) {
 				// Exclude specific option filters if the 'all' filter is enabled
-				self::set_option_exclusions();
+				$exclude_options = array();
+				$exclude_options = apply_filters( 'of_absolute_relative_urls_exclude_option_filters', $exclude_options );
+				include( plugin_dir_path( __FILE__ ) . 'includes/wp-options.php' );
+				self::$exclude_options = array_merge( $exclude_options, $wp_options );
 				add_action( 'all', array( __CLASS__, 'filter_all_options' ) );
 			} else {
 				// Add specific option filters if the 'all' filter is not enabled
@@ -143,135 +148,6 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 				}
 			}
 		} // set_option_filters
-
-		// Set options to exclude from 'all' options
-		private static function set_option_exclusions() {
-			// identify options to exclude from 'all'
-			$exclude_options = array();
-			$exclude_options = apply_filters( 'of_absolute_relative_urls_exclude_option_filters', $exclude_options );
-			self::$exclude_options = array_merge( $exclude_options, array(
-				'siteurl',
-				'home',
-				'blogname',
-				'blogdescription',
-				'users_can_register',
-				'admin_email',
-				'start_of_week',
-				'use_balanceTags',
-				'use_smilies',
-				'require_name_email',
-				'comments_notify',
-				'posts_per_rss',
-				'rss_use_excerpt',
-				'mailserver_url',
-				'mailserver_login',
-				'mailserver_pass',
-				'mailserver_port',
-				'default_category',
-				'default_comment_status',
-				'default_ping_status',
-				'default_pingback_flag',
-				'posts_per_page',
-				'date_format',
-				'time_format',
-				'links_updated_date_format',
-				'comment_moderation',
-				'moderation_notify',
-				'permalink_structure',
-				'rewrite_rules',
-				'hack_file',
-				'blog_charset',
-				'moderation_keys',
-				'active_plugins',
-				'category_base',
-				'ping_sites',
-				'comment_max_links',
-				'gmt_offset',
-
-				// 1.5
-				'default_email_category',
-				'recently_edited',
-				'template',
-				'stylesheet',
-				'comment_whitelist',
-				'blacklist_keys',
-				'comment_registration',
-				'html_type',
-
-				// 1.5.1
-				'use_trackback',
-
-				// 2.0
-				'default_role',
-				'db_version',
-
-				// 2.0.1
-				'uploads_use_yearmonth_folders',
-				'upload_path',
-
-				// 2.1
-				'blog_public',
-				'default_link_category',
-				'show_on_front',
-
-				// 2.2
-				'tag_base',
-
-				// 2.5
-				'show_avatars',
-				'avatar_rating',
-				'upload_url_path',
-				'thumbnail_size_w',
-				'thumbnail_size_h',
-				'thumbnail_crop',
-				'medium_size_w',
-				'medium_size_h',
-
-				// 2.6
-				'avatar_default',
-
-				// 2.7
-				'large_size_w',
-				'large_size_h',
-				'image_default_link_type',
-				'image_default_size',
-				'image_default_align',
-				'close_comments_for_old_posts',
-				'close_comments_days_old',
-				'thread_comments',
-				'thread_comments_depth',
-				'page_comments',
-				'comments_per_page',
-				'default_comments_page',
-				'comment_order',
-				'sticky_posts',
-				'widget_categories',
-				'widget_text',
-				'widget_rss',
-				'uninstall_plugins',
-
-				// 2.8
-				'timezone_string',
-
-				// 3.0
-				'page_for_posts',
-				'page_on_front',
-
-				// 3.1
-				'default_post_format',
-
-				// 3.5
-				'link_manager_enabled',
-
-				// 4.3.0
-				'finished_splitting_shared_terms',
-				'site_icon',
-
-				// 4.4.0
-				'medium_large_size_w',
-				'medium_large_size_h',
-			));
-		} // set_option_exclusions
 
 		// dynamically add option filters
 		public static function filter_all_options( $filter ) {
