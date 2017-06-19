@@ -2,9 +2,9 @@
 Contributors: intuitart
 Tags: absolute, relative, url, seo, portable, website
 Requires at least: 4.4.0
-Tested up to: 4.7
-Stable tag: 1.5.2
-Version: 1.5.2
+Tested up to: 4.8
+Stable tag: 1.5.3
+Version: 1.5.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -41,6 +41,13 @@ where {type} is 'view', 'save', 'option' or 'exclude_option'.
 
 
 == Changelog ==
+
+= 1.5.3 =
+* Ignore // at beginning of url when displaying urls as this is sometimes used for schema relative urls (thanks @ublac)
+* Ignore urls in content that is not prefixed by src, href, etc. when saving urls (thanks @timbobo)
+* Created a single pattern that is used for all save and display filters
+* Appended a / when saving a url and a domain without a trailing slash was used
+* Tested Wordpress version 4.8
 
 = 1.5.2 =
 

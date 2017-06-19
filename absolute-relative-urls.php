@@ -7,8 +7,8 @@ Description: Saves relative URLs to database. Displays absolute URLs.
 Author: Andrew Patterson
 Author URI: http://www.pattersonresearch.ca
 Tags: relative, absolute, url, seo, portable
-Version: 1.5.2
-Date: 12 Jan 2017
+Version: 1.5.3
+Date: 19 Jun 2017
 */
 
 // Exit if accessed directly
@@ -28,6 +28,7 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 		private static $url2; // second url when making relative urls
 		private static $delim; // delimiter for preg_replace
 		private static $exclude_options = array(); // exclusions when doing 'all' options
+		private static $pattern; // pattern to match
 		
 		// initialize
 		public static function init() {
@@ -47,9 +48,9 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 					$content->$key = self::relative_url( $value );
 				}
 			} elseif ( is_string( $content ) ) {
-				$content = str_replace( self::$url1, '/', $content );
+				$content = preg_replace( self::$delim . self::$pattern .  self::$url1 . '(/?)' . self::$delim, '${1}/', $content);
 				if ( self::$url2 ) {
-					$content = str_replace( self::$url2, '/', $content );
+					$content = preg_replace( self::$delim . self::$pattern .  self::$url2 . '(/?)' . self::$delim, '${1}/', $content);
 				}
 			}
 			return $content;
@@ -66,8 +67,8 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 					$content->$key = self::absolute_url( $value );
 				}
 			} elseif ( is_string( $content ) ) { // wp url, then site url
-				$content = preg_replace( self::$delim . '(^|src="|href="|srcset="|, )/' . self::$upload_path . self::$delim, '${1}' . self::$wpurl . self::$upload_path, $content );
-				$content = preg_replace( self::$delim . '(^|src="|href=")/' . self::$delim, '${1}' . self::$url, $content );
+				$content = preg_replace( self::$delim . self::$pattern . '(/[^/])' . self::$upload_path . self::$delim, '${1}' . self::$wpurl . '${2}' . self::$upload_path, $content );
+				$content = preg_replace( self::$delim . self::$pattern . '(/[^/])' . self::$delim, '${1}' . self::$url . '${2}' , $content );
 			}
 			return $content;
 		} // absolute_url
@@ -75,8 +76,9 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 		// set vars
 		private static function set_vars() {
 			self::$delim = chr(127);
-			self::$wpurl = trailingslashit( get_bloginfo( 'wpurl' ) );
-			self::$url = trailingslashit( get_bloginfo( 'url' ) );
+			self::$pattern = '(src=\\\\?"|href=\\\\?"|srcset=\\\\?"|[0-9]+w, )';
+			self::$wpurl = untrailingslashit( get_bloginfo( 'wpurl' ) );
+			self::$url = untrailingslashit( get_bloginfo( 'url' ) );
 			if ( self::$wpurl === self::$url ) { // doesn't matter which url gets used
 				self::$url1 = self::$wpurl;
 				self::$url2 = false;
@@ -87,6 +89,7 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 				self::$url1 = self::$url;
 				self::$url2 = self::$wpurl;
 			}
+			
 			// upload path
 			$wp_upload = wp_upload_dir();
 			if ( ! $wp_upload[ 'error' ] && ( 0 === strpos( $wp_upload[ 'baseurl' ], self::$wpurl ) ) ) {
