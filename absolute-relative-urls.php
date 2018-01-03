@@ -7,8 +7,8 @@ Description: Saves relative URLs to database. Displays absolute URLs.
 Author: Andrew Patterson
 Author URI: http://www.pattersonresearch.ca
 Tags: relative, absolute, url, seo, portable
-Version: 1.5.3
-Date: 19 Jun 2017
+Version: 1.5.4
+Date: 3 Jan 2017
 */
 
 // Exit if accessed directly
@@ -24,8 +24,7 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 		private static $upload_path; // path only
 		private static $wpurl; // wp url (upload url)
 		private static $url; // site url
-		private static $url1; // first url when making relative urls
-		private static $url2; // second url when making relative urls
+		private static $urls; // urls to replace when making relative urls
 		private static $delim; // delimiter for preg_replace
 		private static $exclude_options = array(); // exclusions when doing 'all' options
 		private static $pattern; // pattern to match
@@ -48,10 +47,7 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 					$content->$key = self::relative_url( $value );
 				}
 			} elseif ( is_string( $content ) ) {
-				$content = preg_replace( self::$delim . self::$pattern .  self::$url1 . '(/?)' . self::$delim, '${1}/', $content);
-				if ( self::$url2 ) {
-					$content = preg_replace( self::$delim . self::$pattern .  self::$url2 . '(/?)' . self::$delim, '${1}/', $content);
-				}
+				$content = preg_replace( self::$delim . self::$pattern . self::$urls . '(/?)' . self::$delim, '${1}/', $content);
 			}
 			return $content;
 		} // relative_url
@@ -67,8 +63,17 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 					$content->$key = self::absolute_url( $value );
 				}
 			} elseif ( is_string( $content ) ) { // wp url, then site url
-				$content = preg_replace( self::$delim . self::$pattern . '(/[^/])' . self::$upload_path . self::$delim, '${1}' . self::$wpurl . '${2}' . self::$upload_path, $content );
-				$content = preg_replace( self::$delim . self::$pattern . '(/[^/])' . self::$delim, '${1}' . self::$url . '${2}' , $content );
+				$content = preg_replace(
+					array(
+						self::$delim . self::$pattern . '(/[^/])' . self::$upload_path . self::$delim,
+						self::$delim . self::$pattern . '(/[^/])' . self::$delim
+					),
+					array(
+						'${1}' . self::$wpurl . '${2}' . self::$upload_path,
+						'${1}' . self::$url . '${2}'
+					),
+					$content
+				);
 			}
 			return $content;
 		} // absolute_url
@@ -76,20 +81,24 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 		// set vars
 		private static function set_vars() {
 			self::$delim = chr(127);
-			self::$pattern = '(src=\\\\?"|href=\\\\?"|srcset=\\\\?"|[0-9]+w, )';
+			self::$pattern = '(^|src=\\\\?"|href=\\\\?"|srcset=\\\\?"|[0-9]+w, )';
 			self::$wpurl = untrailingslashit( get_bloginfo( 'wpurl' ) );
 			self::$url = untrailingslashit( get_bloginfo( 'url' ) );
-			if ( self::$wpurl === self::$url ) { // doesn't matter which url gets used
-				self::$url1 = self::$wpurl;
-				self::$url2 = false;
-			} elseif ( 0 === strpos( self::$wpurl, self::$url ) ) { // wp url first
-				self::$url1 = self::$wpurl;
-				self::$url2 = self::$url;
-			} else { // site url first
-				self::$url1 = self::$url;
-				self::$url2 = self::$wpurl;
+			$related_sites[] = [ 'wpurl' => self::$wpurl, 'url' => self::$url ];
+			$related_sites = array_merge( $related_sites, apply_filters( 'of_absolute_relative_urls_related_sites', [] ) );
+			foreach( $related_sites as $sites ) {
+				if ( empty( $sites['url'] ) || $sites['wpurl'] === $sites['wpurl'] ) { // equal or site url not specified (presumed equal), use wp url
+					$urls[] = $sites['wpurl'];
+				} elseif ( 0 === strpos( $sites['wpurl'], $sites['wpurl'] ) ) { // wp url first
+					$urls[] = $sites['wpurl'];
+					$urls[] = $sites['url'];
+				} else { // site url first
+					$urls[] = $sites['url'];
+					$urls[] = $sites['wpurl'];
+				}
 			}
-			
+			self::$urls = '(' . implode( '|', $urls ) . ')';
+
 			// upload path
 			$wp_upload = wp_upload_dir();
 			if ( ! $wp_upload[ 'error' ] && ( 0 === strpos( $wp_upload[ 'baseurl' ], self::$wpurl ) ) ) {
@@ -98,7 +107,7 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 				self::$upload_path = 'wp-content/uploads';
 			}
 		} // set_vars
-		
+
 		// set view and save filters
 		private static function set_filters() {
 			// View filters (Relative to Absolute)

@@ -2,9 +2,9 @@
 Contributors: intuitart
 Tags: absolute, relative, url, seo, portable, website
 Requires at least: 4.4.0
-Tested up to: 4.8
-Stable tag: 1.5.3
-Version: 1.5.3
+Tested up to: 4.9
+Stable tag: 1.5.4
+Version: 1.5.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,6 +30,27 @@ The plugin does not retroactively modify urls in your database unless you manual
 
 Should you stop using the plugin your website will still work as the plugin uses root relative urls and browsers assume the same domain when they see a relative url. Exceptions would be when a you are running in a subdirectory and that is part of your site url, or if you are providing an RSS feed to third parties where absolute urls are required.
 
+* New in version 1.5.4
+
+Allow urls from related sites to be saved as relative urls. This makes it easier to copy/paste html content from one site to another (e.g. staging to production, production to development). Note that this doesn't solve all problems with copy/paste from one site to another. For example, if images on one site are in a different folder, they will still need to be tweaked manually.
+
+To add related sites, add a filter and function to your functions.php similar to the following:
+
+	// add related sites to be saved as relative urls
+	add_filter( 'of_absolute_relative_urls_related_sites', 'my_related_sites' );
+	function my_related_sites( $related_sites ) {
+		$related_sites[] = [
+			'wpurl' => 'https://www.chennabaree.com', // wp url
+			'url' => 'https://www.chennabaree.com' // site url
+		];
+		$related_sites[] = [
+			'wpurl' => 'https://www.schoolofunusualarts.com'
+		];
+		return $related_sites;
+	}
+
+Note: if site url and wp url are identical, you only need to specify 'wpurl'.
+ 
 * New in version 1.5.0, 1.5.1
 
 Enable all options instead of specific options. In functions.php, put
@@ -41,6 +62,13 @@ where {type} is 'view', 'save', 'option' or 'exclude_option'.
 
 
 == Changelog ==
+
+= 1.5.4 =
+* Add related sites to list of urls that can be saved as relative urls (thanks @tythewebguy)
+* Reinstated conversion of urls that are the only content in a field (affects things like header image urls)
+* Reduced both save and view conversions to run in a single grep_replace
+* Put copy on github in case anyone wants to fork or contribute, https://github.com/intuitart/Absolute-Relative-URLs
+* Tested Wordpress version 4.9.x
 
 = 1.5.3 =
 * Ignore // at beginning of url when displaying urls as this is sometimes used for schema relative urls (thanks @ublac)
