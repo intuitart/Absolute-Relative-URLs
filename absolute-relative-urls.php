@@ -7,8 +7,8 @@ Description: Saves relative URLs to database. Displays absolute URLs.
 Author: Andrew Patterson
 Author URI: http://www.pattersonresearch.ca
 Tags: relative, absolute, url, seo, portable
-Version: 1.5.4
-Date: 3 Jan 2017
+Version: 1.5.5
+Date: 9 Feb 2018
 */
 
 // Exit if accessed directly
@@ -84,8 +84,8 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 			self::$pattern = '(^|src=\\\\?"|href=\\\\?"|srcset=\\\\?"|[0-9]+w, )';
 			self::$wpurl = untrailingslashit( get_bloginfo( 'wpurl' ) );
 			self::$url = untrailingslashit( get_bloginfo( 'url' ) );
-			$related_sites[] = [ 'wpurl' => self::$wpurl, 'url' => self::$url ];
-			$related_sites = array_merge( $related_sites, apply_filters( 'of_absolute_relative_urls_related_sites', [] ) );
+			$related_sites[] = array( 'wpurl' => self::$wpurl, 'url' => self::$url );
+			$related_sites = array_merge( $related_sites, apply_filters( 'of_absolute_relative_urls_related_sites', array() ) );
 			foreach( $related_sites as $sites ) {
 				if ( empty( $sites['url'] ) || $sites['wpurl'] === $sites['wpurl'] ) { // equal or site url not specified (presumed equal), use wp url
 					$urls[] = $sites['wpurl'];

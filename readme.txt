@@ -3,8 +3,8 @@ Contributors: intuitart
 Tags: absolute, relative, url, seo, portable, website
 Requires at least: 4.4.0
 Tested up to: 4.9
-Stable tag: 1.5.4
-Version: 1.5.4
+Stable tag: 1.5.5
+Version: 1.5.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,9 +12,13 @@ Save relative URLs to database. Present absolute URLs for viewing.
 
 == Description ==
 
-When inserting images or links in content Wordpress saves them as absolute URLs. This plugin removes the get_bloginfo('url') portion as content is saved and inserts it again when content is viewed.
+This plugin makes your Wordpress content adaptable in that you can present content from a domain other than the one in it which it was created. It achieves this by saving URLs as relative URLs. At the same time it supports SEO requirements by reverting to absolute URLs when they are displayed.
 
-This helps when you want to copy or move a site for any reason, essentially any time you want to present content from a domain other than the one it which it was created. At the same time it supports SEO requirements for absolute URLs, which appear to be at the heart of all arguments for absolute URLs.
+This is useful when moving a site from development to staging to production. Or perhaps your site has been taken over by a new organization and they want to run under a different domain. Or perhaps you want to move the ~/uploads folder ourside of Wordpress core. Whatever the reason, simply change the Wordpress Address (URL) and Site Address (URL) in your new environment, and you should be good to go.
+
+In addition to moving the whole site to a new domain, you can identify specific domains as being related. This allows you to copy raw content from one related site and paste it into another. The plugin will recognize the related domain and remove it as it gets saved. Then it will display the absolute URLs of the current domain when it is viewed.
+
+For the technically inclined, the plugin removes the get_bloginfo('url') and get_bloginfo('wpurl') portions of a URL as content is saved and inserts them again as content is viewed.
 
 == Installation ==
 
@@ -53,15 +57,24 @@ Note: if site url and wp url are identical, you only need to specify 'wpurl'.
  
 * New in version 1.5.0, 1.5.1
 
-Enable all options instead of specific options. In functions.php, put
-    add_filter( 'of_absolute_relative_urls_enable_all', function() { return true; } );
+Enable all options instead of specific options. In functions.php, put:
 
-Manage filters that get processed by modifying the array of filters. Build a function to add or remove filter names in the array. Then in functions.php, put
-    add_filter( 'of_absolute_relative_urls_{type}_filters', 'your_function' );
+	// enable all options
+	add_filter( 'of_absolute_relative_urls_enable_all', function() { return true; } );
+
+Manage filters that get processed by modifying the array of filters. Build a function to add or remove filter names in the array. Then in functions.php, put:
+
+	// modify list of filters to include or exclude
+	add_filter( 'of_absolute_relative_urls_{type}_filters', 'your_function' );
+
 where {type} is 'view', 'save', 'option' or 'exclude_option'.
 
 
 == Changelog ==
+
+= 1.5.5 =
+* Fixed array definition to use array() instead of square brackets and be compatible with php prior to version 5.4
+* Updated Description documentation
 
 = 1.5.4 =
 * Add related sites to list of urls that can be saved as relative urls (thanks @tythewebguy)
