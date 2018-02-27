@@ -3,8 +3,8 @@ Contributors: intuitart
 Tags: absolute, relative, url, seo, portable, website
 Requires at least: 4.4.0
 Tested up to: 4.9
-Stable tag: 1.5.5
-Version: 1.5.5
+Stable tag: 1.5.6
+Version: 1.5.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,9 @@ where {type} is 'view', 'save', 'option' or 'exclude_option'.
 
 
 == Changelog ==
+
+= 1.5.6 =
+* Fixed problems displaying urls when Wordpress Address and Site Address in General Settings are not the same url
 
 = 1.5.5 =
 * Fixed array definition to use array() instead of square brackets and be compatible with php prior to version 5.4

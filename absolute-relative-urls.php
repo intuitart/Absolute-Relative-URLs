@@ -7,8 +7,8 @@ Description: Saves relative URLs to database. Displays absolute URLs.
 Author: Andrew Patterson
 Author URI: http://www.pattersonresearch.ca
 Tags: relative, absolute, url, seo, portable
-Version: 1.5.5
-Date: 9 Feb 2018
+Version: 1.5.6
+Date: 27 Feb 2018
 */
 
 // Exit if accessed directly
@@ -65,11 +65,11 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 			} elseif ( is_string( $content ) ) { // wp url, then site url
 				$content = preg_replace(
 					array(
-						self::$delim . self::$pattern . '(/[^/])' . self::$upload_path . self::$delim,
+						self::$delim . self::$pattern . self::$upload_path . self::$delim,
 						self::$delim . self::$pattern . '(/[^/])' . self::$delim
 					),
 					array(
-						'${1}' . self::$wpurl . '${2}' . self::$upload_path,
+						'${1}' . self::$wpurl . self::$upload_path,
 						'${1}' . self::$url . '${2}'
 					),
 					$content
@@ -87,9 +87,9 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 			$related_sites[] = array( 'wpurl' => self::$wpurl, 'url' => self::$url );
 			$related_sites = array_merge( $related_sites, apply_filters( 'of_absolute_relative_urls_related_sites', array() ) );
 			foreach( $related_sites as $sites ) {
-				if ( empty( $sites['url'] ) || $sites['wpurl'] === $sites['wpurl'] ) { // equal or site url not specified (presumed equal), use wp url
+				if ( empty( $sites['url'] ) || $sites['wpurl'] === $sites['url'] ) { // equal or site url not specified (presumed equal), use wp url
 					$urls[] = $sites['wpurl'];
-				} elseif ( 0 === strpos( $sites['wpurl'], $sites['wpurl'] ) ) { // wp url first
+				} elseif ( 0 === strpos( $sites['wpurl'], $sites['url'] ) ) { // wp url first
 					$urls[] = $sites['wpurl'];
 					$urls[] = $sites['url'];
 				} else { // site url first
