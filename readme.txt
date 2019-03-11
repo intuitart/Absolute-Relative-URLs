@@ -1,24 +1,34 @@
-=== Absolute <> Relative URLs ===
+Absolute <> Relative URLs ===
 Contributors: intuitart
 Tags: absolute, relative, url, seo, portable, website
 Requires at least: 4.4.0
-Tested up to: 4.9
-Stable tag: 1.5.6
-Version: 1.5.6
+Tested up to: 5.1
+Stable tag: 1.6.0
+Version: 1.6.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Save relative URLs to database. Present absolute URLs for viewing.
+Want to host your Wordpress site from a different domain? This plugin will help!
 
 == Description ==
 
-This plugin makes your Wordpress content adaptable in that you can present content from a domain other than the one in it which it was created. It achieves this by saving URLs as relative URLs. At the same time it supports SEO requirements by reverting to absolute URLs when they are displayed.
+* Develop/stage in one domain, go live in another.
+* Backup a production site from one domain, restore to a test site at another domain.
+* Migrate from one domain to another with minimal effort.
+* Ease migration between stand alone and multi-site installations.
+* Ease migration between domain and sub-folder installations.
+* Switch between ssl and non-ssl sites.
+* Always present your content in an SEO friendly way.
 
-This is useful when moving a site from development to staging to production. Or perhaps your site has been taken over by a new organization and they want to run under a different domain. Or perhaps you want to move the ~/uploads folder ourside of Wordpress core. Whatever the reason, simply change the Wordpress Address (URL) and Site Address (URL) in your new environment, and you should be good to go.
+We aim to achieve these capabilities with this plugin. The idea is to remove creator urls as content is produced, and play the current url when content is viewed. By default, Wordpress saves the local url with content, and that makes it a challenge to access your content from a different domaim, even when you have a legitimate reason to do so.
+
+This plugin makes your Wordpress content adaptable in that you can present content from a domain other than the one in it which it was produced. It achieves this by saving URLs as relative URLs. At the same time it supports SEO requirements by reverting to absolute URLs when content is viewed.
 
 In addition to moving the whole site to a new domain, you can identify specific domains as being related. This allows you to copy raw content from one related site and paste it into another. The plugin will recognize the related domain and remove it as it gets saved. Then it will display the absolute URLs of the current domain when it is viewed.
 
-For the technically inclined, the plugin removes the get_bloginfo('url') and get_bloginfo('wpurl') portions of a URL as content is saved and inserts them again as content is viewed.
+For the technically inclined, the plugin removes the get_bloginfo('url') and get_bloginfo('wpurl') parts of a URL as content is saved and inserts them again as content is viewed.
+
+We use context and some configurable rules to determine when to apply conversions in both directions. Most of the time you can go with the defaults. If you have a situation where something doesn't appear to work, let me know your experience (with as much detail as possible please).
 
 == Installation ==
 
@@ -26,13 +36,57 @@ For the technically inclined, the plugin removes the get_bloginfo('url') and get
 1. Click the install button
 1. Activate the plugin through the ‘Plugins’ menu
 
-Alternatively you can download the plugin from www.oxfordframework.com/absolute-relative-urls, upload it through the Wordpress plugin uploader, and activate through the Plugins menu.
-
 That's it! Check your database after you've saved some content. URLs should be root relative. Check your editor. URLs should be absolute. Check the source on your web page. URLs should be absolute.
 
-The plugin does not retroactively modify urls in your database unless you manually update content.
+The plugin does not retroactively modify urls in your database unless you manually update content. However, it can convert urls as needed. See notes about related sites.
 
-Should you stop using the plugin your website will still work as the plugin uses root relative urls and browsers assume the same domain when they see a relative url. Exceptions would be when a you are running in a subdirectory and that is part of your site url, or if you are providing an RSS feed to third parties where absolute urls are required.
+Should you stop using the plugin your website will still work as the plugin uses root relative urls and browsers assume the same domain when they see a relative url. Exceptions would be when a you are running in a subdirectory and that is part of your site url, if you are providing an RSS feed to third parties where absolute urls are required, or if you use the multi-site conversion.
+
+* New in version 1.6.0
+
+With the introduction of the Wordpress block editor, urls were not being converted to absolute urls when editing content. They were converted properly when viewing content on the front end, and that is where it is important. But for consistency, and to meet the intent of the plugin, you now see absolute urls in the block editor. This is enabled by default. You can disable it with the following code in your functions.php:
+
+	// disable conversion to absolute urls when editing using the block editor
+	add_filter( 'of_absolute_relative_urls_use_block_editor', function() { return false; } );
+
+A new feature in this version is the ability to remove and restore the 'sites/<n>' part of the upload path when running in a multi-site environment. Unlike url conversions, where most websites will continue to display appropriately when you deactivate this plugin, this feature requires this plugin to be active in order to restore the sites part of the upload path. On the other hand, you should be able to move a stand alone site into a multi-site environment and let this plugin insert the sites part of the upload path without having to convert your database. To enable this feature, add the following filter to your functions.php:
+
+	// enable multi-site feature for upload path
+	add_filter( 'of_absolute_relative_urls_parse_sites_path', function() { return true; } );
+	
+Tested plugin in a multi-site environment and confirmed that conversion of urls, except for the sites part of the upload path, work as expected. In a multi-domain environment, the domain is removed and restored. In a multi-folder environment, the domain and folder are removed and restored. This is the same as running stand-alone with a domain only, or in a folder within a domain.
+
+Another feature introduced in this version is the ability to disable the conversion to absolute or relative urls. There are other wordpress plugins that convert to relative urls, but don't offer the complement. Disable the conversion to absolute urls and you have the same functionality. Or should you want to revert back to having absolute urls stored in the database, disable relative urls, then edit and save content to restore the full urls to your database. To disable one or the other, add one of the following to your functions.php:
+
+	// disable absolute url conversion on your website
+	add_filter( 'of_absolute_relative_urls_enable_absolute', function() { return false; } );
+
+	// disable relative url conversion on your website
+	add_filter( 'of_absolute_relative_urls_enable_relative', function() { return false; } );
+
+What may be the most poweful new feature is the ability to display your site under your current domain, even when it was created under a different domain, without doing any conversion. That's right. We've enhanced the related sites feature to do real time conversion from existing content, not just new content. You can now migate one domain to another, add a related site for the former domain, and enable related sites for existing content. To do this last bit, add the following to your functions.php:
+
+	// enable related sites feature for existing content
+	add_filter( 'of_absolute_relative_urls_enable_related_sites_existing_content', function() { return true; } );
+
+When you set up related sites, and the site url and wordpress url are the same, you can now specify either one. For example, either of the following will work:
+
+	// add a related site using 'site url'
+	add_filter( 'of_absolute_relative_urls_related_sites',
+		function( $related_sites ) {
+			$related_sites[]['url'] = "http://apatterson.org/site2";
+			return $related_sites;
+		}
+	);
+	// add a related site using 'wordpress url'
+	add_filter( 'of_absolute_relative_urls_related_sites',
+		function( $related_sites ) {
+			$related_sites[]['wpurl'] = "http://site2.apatterson.org";
+			return $related_sites;
+		}
+	);
+
+One more thing. We now parse 'data-link' urls along with others such as 'href' and 'src'. We discovered these being used in the gallery component of the block editor.
 
 * New in version 1.5.4
 
@@ -71,6 +125,15 @@ where {type} is 'view', 'save', 'option' or 'exclude_option'.
 
 
 == Changelog ==
+
+= 1.6.0 =
+* Fixed things so that urls are converted to absolute urls when editing content using the block editor
+* Added feature to remove and restore the 'sites/<n>' part of the upload path when running in a multi-site environment
+* Added ability to disable either relative or absolute conversions
+* Restructured the code where filters are set, in part to simplify and in part to make it easier to disable relative or absolute conversions
+* Added ability to convert related sites in real time
+* Dropped the ability to filter 'all' options, now only supports identifying options to be filtered (this was always the default)
+* We now parse 'data-link' urls used by the gallery in the block editor
 
 = 1.5.6 =
 * Fixed problems displaying urls when Wordpress Address and Site Address in General Settings are not the same url
