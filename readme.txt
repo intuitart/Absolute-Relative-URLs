@@ -1,10 +1,10 @@
-Absolute <> Relative URLs ===
+=== Absolute Relative URLs ===
 Contributors: intuitart
 Tags: absolute, relative, url, seo, portable, website
 Requires at least: 4.4.0
-Tested up to: 5.1
-Stable tag: 1.6.0
-Version: 1.6.0
+Tested up to: 5.7
+Stable tag: 1.6.1
+Version: 1.6.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -42,6 +42,28 @@ The plugin does not retroactively modify urls in your database unless you manual
 
 Should you stop using the plugin your website will still work as the plugin uses root relative urls and browsers assume the same domain when they see a relative url. Exceptions would be when a you are running in a subdirectory and that is part of your site url, if you are providing an RSS feed to third parties where absolute urls are required, or if you use the multi-site conversion.
 
+* New in version 1.6.1
+
+Converted to a singleton instantiated class in place of static.
+
+Modified the filter to add related site urls so that you only need to specify each url. You no longer need to specify whether the url represents the site or wp url. The original method still works, for now.
+
+    // no longer requires ['wpurl'] or ['url'] to be specified, just add a url
+    add_filter( 'of_absolute_relative_urls_related_sites',
+    	function( $related_sites ) {
+    		$related_sites[] = "http://multifolder.apatterson.org/site2";
+    		return $related_sites;
+    	}
+    );
+
+Introduced filters to override Site and Wordpress URLs. Use cases for this have come up a couple of times in the support forum (@colinguqbio, @houba_houbi). Now it is possible without hacking the code.
+
+    // example: set Wordpress url to a specific url
+    add_filter( 'of_absolute_relative_urls_wpurl', function() { return "https://www.mydomain.com/blog"; } );
+
+    // example: set Site url same as Wordpress url
+    add_filter( 'of_absolute_relative_urls_url', function( $url, $wpurl ) { return $wpurl; }, 10, 2 );
+
 * New in version 1.6.0
 
 With the introduction of the Wordpress block editor, urls were not being converted to absolute urls when editing content. They were converted properly when viewing content on the front end, and that is where it is important. But for consistency, and to meet the intent of the plugin, you now see absolute urls in the block editor. This is enabled by default. You can disable it with the following code in your functions.php:
@@ -53,7 +75,7 @@ A new feature in this version is the ability to remove and restore the 'sites/<n
 
 	// enable multi-site feature for upload path
 	add_filter( 'of_absolute_relative_urls_parse_sites_path', function() { return true; } );
-	
+
 Tested plugin in a multi-site environment and confirmed that conversion of urls, except for the sites part of the upload path, work as expected. In a multi-domain environment, the domain is removed and restored. In a multi-folder environment, the domain and folder are removed and restored. This is the same as running stand-alone with a domain only, or in a folder within a domain.
 
 Another feature introduced in this version is the ability to disable the conversion to absolute or relative urls. There are other wordpress plugins that convert to relative urls, but don't offer the complement. Disable the conversion to absolute urls and you have the same functionality. Or should you want to revert back to having absolute urls stored in the database, disable relative urls, then edit and save content to restore the full urls to your database. To disable one or the other, add one of the following to your functions.php:
@@ -108,7 +130,7 @@ To add related sites, add a filter and function to your functions.php similar to
 	}
 
 Note: if site url and wp url are identical, you only need to specify 'wpurl'.
- 
+
 * New in version 1.5.0, 1.5.1
 
 Enable all options instead of specific options. In functions.php, put:
@@ -125,6 +147,12 @@ where {type} is 'view', 'save', 'option' or 'exclude_option'.
 
 
 == Changelog ==
+
+= 1.6.1 =
+* Modified filter to specify related sites_path
+* Converted plugin to singleton class
+* Introduced related plugin to manage settings
+* Added a public function to return current plugin version
 
 = 1.6.0 =
 * Fixed things so that urls are converted to absolute urls when editing content using the block editor
@@ -219,3 +247,4 @@ where {type} is 'view', 'save', 'option' or 'exclude_option'.
 = 1.0 =
 
 * First release, catches post_content and widget_black-studio-tinymce updates
+

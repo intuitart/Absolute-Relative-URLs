@@ -1,14 +1,14 @@
 <?php
 
 /*
-Plugin Name: Absolute &lt;&gt; Relative URLs
+Plugin Name: Absolute Relative URLs
 Plugin URI: https://www.oxfordframework.com/absolute-relative-urls
-Description: Saves relative URLs to database. Displays absolute URLs.
+Description: Want to host your Wordpress site from a different domain? This plugin will help!
 Author: Andrew Patterson
 Author URI: http://www.pattersonresearch.ca
 Tags: relative, absolute, url, seo, portable, multi-site, network
-Version: 1.6.0
-Date: 10 March 2019
+Version: 1.6.1
+Date: 31 March 2021
 */
 
 // Exit if accessed directly
@@ -16,45 +16,55 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-
 if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 
 	class of_absolute_relative_urls {
 
-		private static $upload_path; // path only, not url
-		private static $sites_path; // '/sites/<n>' part of upload path, current site
-		private static $sites_pattern; // '/sites/<n>' preg_replace pattern, unknown site
-		private static $wpurl; // wp url (upload url)
-		private static $url; // site url (domain, or domain/folder)
-		private static $urls; // urls to replace when making relative urls
-		private static $del; // delimiter for preg_replace
-		private static $pattern; // pattern to match
+		private $upload_path; // path only, not url
+		private $sites_path; // '/sites/<n>' part of upload path, current site
+		private $sites_pattern; // '/sites/<n>' preg_replace pattern, unknown site
+		private $wpurl; // wp url (upload url)
+		private $url; // site url (domain, or domain/folder)
+		private $urls; // urls to replace when making relative urls
+		private $del; // delimiter for preg_replace
+		private $pattern; // pattern to match
 
-		// initialize
-		public static function init() {
-			self::set_vars();
-			self::set_filters();
-		} // init
+		private $debug_log = '/var/www/debug/debug.log';
+
+		// Startup, private, create or get instance via of_absolute_relative_urls::instance()
+		private function __construct() {
+			$this->set_vars();
+			$this->set_filters();
+		} // __construct
+
+		// return instance, create if one doesn't exist
+		public function instance() {
+			static $instance = null;
+			if ( $instance == null ) {
+				$instance = new of_absolute_relative_urls();
+			}
+			return $instance;
+		} // instance()
 
 		// Remove domain from urls when saving content
-		public static function relative_url( $content ) {
+		public function relative_url( $content ) {
 			if ( is_array( $content ) ) {
 				foreach ( $content as $key => $value ) {
-					$content[ $key ] = self::relative_url( $value );
+					$content[ $key ] = $this->relative_url( $value );
 				}
 			} elseif ( is_object( $content ) ) {
 				foreach ( $content as $key => $value ) {
-					$content->$key = self::relative_url( $value );
+					$content->$key = $this->relative_url( $value );
 				}
 			} elseif ( is_string( $content ) ) {
 				$content = preg_replace(
 					array(
-						self::$del . self::$pattern . self::$urls . '(/?)' . self::$del,
-						self::$del . self::$pattern . self::$upload_path . self::$sites_pattern .  self::$del,
+						$this->del . $this->pattern . $this->urls . '(/?)' . $this->del,
+						$this->del . $this->pattern . $this->upload_path . $this->sites_pattern .  $this->del,
 						),
 					array(
 						'${1}/',
-						'${1}' . self::$upload_path,
+						'${1}' . $this->upload_path,
 						),
 					$content
 				);
@@ -63,27 +73,27 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 		} // relative_url
 
 		// Add domain to urls when displaying/editing content
-		public static function absolute_url( $content ) {
+		public function absolute_url( $content ) {
 			if ( is_array( $content ) ) {
 				foreach ( $content as $key => $value ) {
-					$content[ $key ] = self::absolute_url( $value );
+					$content[ $key ] = $this->absolute_url( $value );
 				}
 			} elseif ( is_object( $content ) ) {
 				foreach ( $content as $key => $value ) {
-					$content->$key = self::absolute_url( $value );
+					$content->$key = $this->absolute_url( $value );
 				}
 			} elseif ( is_string( $content ) ) { // wp url, then site url
 				if ( apply_filters( 'of_absolute_relative_urls_enable_related_sites_existing_content', false ) ) {
-					$content = self::relative_url( $content );
+					$content = $this->relative_url( $content );
 				}
 				$content = preg_replace(
 					array(
-						self::$del . self::$pattern . self::$upload_path . self::$del,
-						self::$del . self::$pattern . '(/[^/])' . self::$del
+						$this->del . $this->pattern . $this->upload_path . $this->del,
+						$this->del . $this->pattern . '(/[^/])' . $this->del
 					),
 					array(
-						'${1}' . self::$wpurl . self::$upload_path . self::$sites_path,
-						'${1}' . self::$url . '${2}'
+						'${1}' . $this->wpurl . $this->upload_path . $this->sites_path,
+						'${1}' . $this->url . '${2}'
 					),
 					$content
 				);
@@ -92,57 +102,71 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 		} // absolute_url
 
 		// set vars
-		private static function set_vars() {
+		private function set_vars() {
 
 			// initialize class variables/constants
-			self::$del = chr(127);
-			self::$pattern = '(^|href=\\\\?"|src=\\\\?"|srcset=\\\\?"|data-link=\\\\?"|[0-9]+w, )';
-			self::$wpurl = untrailingslashit( get_bloginfo( 'wpurl' ) );
-			self::$url = untrailingslashit( get_bloginfo( 'url' ) );
+			$this->del = chr(127);
+			$this->pattern = '(^|href=\\\\?"|src=\\\\?"|srcset=\\\\?"|data-link=\\\\?"|[0-9]+w, )';
+			$this->wpurl = untrailingslashit( get_bloginfo( 'wpurl' ) );
+			$this->url = untrailingslashit( get_bloginfo( 'url' ) );
 
-			// local urls to look for
-			$related_sites[] = array( 'wpurl' => self::$wpurl, 'url' => self::$url );
-			$related_sites = array_merge( $related_sites, apply_filters( 'of_absolute_relative_urls_related_sites', array() ) );
-			foreach( $related_sites as $sites ) {
-				if ( empty( $sites['url'] ) && !empty( $sites['wpurl'] ) ) { // only wp url specified
-					$urls[] = $sites['wpurl'];
-				} elseif ( !empty( $sites['url'] ) && empty( $sites['wpurl'] ) ) { // only site url specified
-					$urls[] = $sites['url'];
-				} elseif ( $sites['wpurl'] === $sites['url'] ) { // urls are equal, use site url
-					$urls[] = $sites['url'];
-				} elseif ( 0 === strpos( $sites['wpurl'], $sites['url'] ) ) { // wp url first
-					$urls[] = $sites['wpurl'];
-					$urls[] = $sites['url'];
-				} else { // site url first
-					$urls[] = $sites['url'];
-					$urls[] = $sites['wpurl'];
+			// current site and wp urls
+			$this->wpurl = apply_filters( 'of_absolute_relative_urls_wpurl', $this->wpurl, $this->url );
+			$this->url = apply_filters( 'of_absolute_relative_urls_url', $this->url, $this->wpurl );
+			$urls[] = $this->url;
+			if ( $this->url !== $this->wpurl ) {
+				$urls[] = $this->wpurl;
+			}
+
+			// related sites urls
+			$related_sites = apply_filters( 'of_absolute_relative_urls_related_sites', array() );
+			foreach( $related_sites as $site ) {
+
+				// current structure for specifying related urls, just the url
+				if ( is_string ( $site ) ) {
+					$urls[] = $site;
+				}
+
+				// deprecated structure for related urls, specify whether site or wp url
+				elseif ( is_array( $site ) ) {
+					if ( !empty( $site['url'] ) ) {
+						$urls[] = $site['url'];
+					}
+					if ( !empty( $site['wpurl'] ) ) {
+						$urls[] = $site['wpurl'];
+					}
 				}
 			}
-			self::$urls = '(' . implode( '|', $urls ) . ')';
+
+			// ensure longer urls get parsed first when one url is a substring of another
+			rsort( $urls );
+
+			// prepare urls for regex search and replace
+			$this->urls = '(' . implode( '|', $urls ) . ')';
 
 			// upload path
 			$wp_upload = wp_upload_dir();
-			if ( ! $wp_upload[ 'error' ] && ( 0 === strpos( $wp_upload[ 'baseurl' ], self::$wpurl ) ) ) {
-				$upload_path = substr( $wp_upload[ 'baseurl' ], strlen( self::$wpurl ) );
+			if ( ! $wp_upload[ 'error' ] && ( 0 === strpos( $wp_upload[ 'baseurl' ], $this->wpurl ) ) ) {
+				$upload_path = substr( $wp_upload[ 'baseurl' ], strlen( $this->wpurl ) );
 			} else { // fallback
 				$upload_path = '/wp-content/uploads';
 			}
 
 			// split $sites_path and $upload_path if desired
 			if ( apply_filters( 'of_absolute_relative_urls_parse_sites_path', false ) ) {
-				self::$sites_path = strstr( $upload_path, '/sites/' );
-				self::$sites_pattern = '(/sites/\d+)';
-				self::$upload_path = strstr( $upload_path, '/sites/', true );
+				$this->sites_path = strstr( $upload_path, '/sites/' );
+				$this->sites_pattern = '(/sites/\d+)';
+				$this->upload_path = strstr( $upload_path, '/sites/', true );
 			} else {
-				self::$sites_path = '';
-				self::$sites_pattern = '()';
-				self::$upload_path = $upload_path;
+				$this->sites_path = '';
+				$this->sites_pattern = '()';
+				$this->upload_path = $upload_path;
 			}
 
 		} // set_vars
 
 		// set view and save filters
-		private static function set_filters() {
+		public function set_filters() {
 
 			// initialize defaults
 			$view_filters = array(
@@ -173,13 +197,13 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 
 			// View filters (Relative to Absolute)
 			if ( apply_filters( 'of_absolute_relative_urls_enable_absolute', true ) ) {
-				$view_filters = apply_filters( 'of_absolute_relative_urls_view_filters', $view_filters );
-				foreach( $view_filters as $filter ) {
-					add_filter( $filter, array( __CLASS__, 'absolute_url' ) );
-				}
 				// Filter $post for block editor, see ~/wp-admin/includes/post.php
 				if ( apply_filters( 'of_absolute_relative_urls_use_block_editor', true ) ) {
-					add_filter( 'use_block_editor_for_post', array( __CLASS__, 'filter_post_content' ), 2, 100 );
+					add_filter( 'use_block_editor_for_post', array( $this, 'filter_post_content' ), 100, 2 );
+				}
+				$view_filters = apply_filters( 'of_absolute_relative_urls_view_filters', $view_filters );
+				foreach( $view_filters as $filter ) {
+					add_filter( $filter, array( $this, 'absolute_url' ) );
 				}
 			}
 
@@ -187,20 +211,20 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 			if ( apply_filters( 'of_absolute_relative_urls_enable_relative', true ) ) {
 				$save_filters = apply_filters( 'of_absolute_relative_urls_save_filters', $save_filters );
 				foreach( $save_filters as $filter ) {
-					add_filter( $filter, array( __CLASS__, 'relative_url' ) );
+					add_filter( $filter, array( $this, 'relative_url' ) );
 				}
 			}
 		} // set_filters
-		
+
 		// Special filter/action to filter $post and update cache
-		public static function filter_post_content( $filter = false, $post = '' ) {
+		public function filter_post_content( $filter = false, $post = '' ) {
 			if ( $filter ) {
 				// default to global $post if none received
 				if ( empty( $post ) ) {
 					global $post;
 				}
-				$post->post_content = self::absolute_url( $post->post_content );
-				$post->post_excerpt = self::absolute_url( $post->post_excerpt );
+				$post->post_content = $this->absolute_url( $post->post_content );
+				$post->post_excerpt = $this->absolute_url( $post->post_excerpt );
 				// need to update the cache so the front end gets the filtered content
 				wp_cache_replace( $post->ID, $post, 'posts' );
 			}
@@ -208,9 +232,10 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 		} // filter_post_content
 
 	} // class of_absolute_relative_urls
-	add_action( 'init', array( 'of_absolute_relative_urls', 'init' ) );
-}
 
+	// initialize on 'init'
+	add_action( 'init', array( 'of_absolute_relative_urls', 'instance' ) );
+}
 
 /*
  * Summary of actions/filters supported by this plugin
@@ -219,6 +244,7 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
  */
 
 // override on/off settings
+
 //add_filter( 'of_absolute_relative_urls_enable_relative', function() { return false; } );
 //add_filter( 'of_absolute_relative_urls_enable_absolute', function() { return false; } );
 //add_filter( 'of_absolute_relative_urls_enable_related_sites_existing_content', function() { return true; } );
@@ -227,9 +253,25 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 
 // adjust other inputs
 
+// example: set $wpurl to a specific url
+//add_filter( 'of_absolute_relative_urls_wpurl', function() { return "https://www.mydomain.com/blog"; } );
+
+// example: WPML Integration, set $url = $wpurl when *Use directory for default language* is enabled in WPML
+//add_filter( 'of_absolute_relative_urls_url',
+//	function( $url, $wpurl ) {
+//		if ( class_exists( 'SitePress' ) ) {
+//			$wpml_url_settings = apply_filters( 'wpml_setting', false, 'urls' );
+//			if ( $wpml_url_settings['directory_for_default_language'] == true ) {
+//				$url = $wpurl;
+//			}
+//		}
+//		return $url;
+//	}, 10, 2
+//);
+
 //add_filter( 'of_absolute_relative_urls_related_sites',
 //	function( $related_sites ) {
-//		$related_sites[]['url'] = "http://multifolder.apatterson.org/site2";
+//		$related_sites[] = "http://multifolder.apatterson.org/site2";
 //		return $related_sites;
 //	}
 //);
