@@ -3,8 +3,8 @@ Contributors: intuitart
 Tags: absolute, relative, url, seo, portable, website
 Requires at least: 4.4.0
 Tested up to: 5.7
-Stable tag: 1.6.1
-Version: 1.6.1
+Stable tag: 1.6.2
+Version: 1.6.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -41,6 +41,10 @@ That's it! Check your database after you've saved some content. URLs should be r
 The plugin does not retroactively modify urls in your database unless you manually update content. However, it can convert urls as needed. See notes about related sites.
 
 Should you stop using the plugin your website will still work as the plugin uses root relative urls and browsers assume the same domain when they see a relative url. Exceptions would be when a you are running in a subdirectory and that is part of your site url, if you are providing an RSS feed to third parties where absolute urls are required, or if you use the multi-site conversion.
+
+* New in version 1.6.2
+
+Fixed instance() method, so it can be called statically and avoid deprecation warning about calling non-static method.
 
 * New in version 1.6.1
 

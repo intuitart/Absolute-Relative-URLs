@@ -7,8 +7,8 @@ Description: Want to host your Wordpress site from a different domain? This plug
 Author: Andrew Patterson
 Author URI: http://www.pattersonresearch.ca
 Tags: relative, absolute, url, seo, portable, multi-site, network
-Version: 1.6.1
-Date: 31 March 2021
+Version: 1.6.2
+Date: 2 April 2021
 */
 
 // Exit if accessed directly
@@ -29,8 +29,6 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 		private $del; // delimiter for preg_replace
 		private $pattern; // pattern to match
 
-		private $debug_log = '/var/www/debug/debug.log';
-
 		// Startup, private, create or get instance via of_absolute_relative_urls::instance()
 		private function __construct() {
 			$this->set_vars();
@@ -38,7 +36,7 @@ if ( ! class_exists( 'of_absolute_relative_urls' ) ) {
 		} // __construct
 
 		// return instance, create if one doesn't exist
-		public function instance() {
+		public static function instance() {
 			static $instance = null;
 			if ( $instance == null ) {
 				$instance = new of_absolute_relative_urls();
